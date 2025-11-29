@@ -5,7 +5,10 @@ import com.example.huerto_hogar.huerto_hogar.service.UsuarioService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.HashMap;
 import java.util.Map;
+
 
 @RestController
 @RequestMapping("/api/v1/usuarios")
@@ -14,21 +17,30 @@ public class UsuarioController {
 
     @Autowired private UsuarioService service;
 
-    @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody Map<String, String> body) {
-        try {
-            String correo = body.get("correo");
-            String password = body.get("password");
 
-            Usuario u = service.login(correo, password);
+    @Autowired
+    private com.example.huerto_hogar.huerto_hogar.security.JwtUtil jwtUtil; 
+
+    @PostMapping("/login")
+    public ResponseEntity<?> login(@RequestBody Map<String, String> credenciales) {
+        String correo = credenciales.get("correo");
+        String password = credenciales.get("password");
+
+        // Lógica de validación normal
+        Usuario usuario = service.login(correo, password);
+
+        if (usuario != null) {
+            // Aqui generamos el token JWT
+            String token = jwtUtil.generateToken(usuario.getCorreo(), usuario.getRol().getNombre());
             
-            if (u != null) {
-                return ResponseEntity.ok(u);
-            } else {
-                return ResponseEntity.status(401).body("Credenciales incorrectas");
-            }
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError().body("Error en el servidor: " + e.getMessage());
+            //Preparamos la respuesta (Usuario + Token)
+            Map<String, Object> respuesta = new HashMap<>();
+            respuesta.put("usuario", usuario);
+            respuesta.put("token", token);
+            
+            return ResponseEntity.ok(respuesta);
+        } else {
+            return ResponseEntity.status(401).body("Credenciales incorrectas");
         }
     }
 
