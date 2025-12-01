@@ -70,6 +70,17 @@ public class UsuarioController {
             e.printStackTrace();
             return ResponseEntity.internalServerError().body("Error al registrar: " + e.getMessage());
         }
+        
+    }
+    @PutMapping("/{id}")
+    public ResponseEntity<?> modificar(@PathVariable Long id, @RequestBody Usuario usuario) {
+        try {
+            //actualizar usuario
+            Usuario actualizado = service.actualizar(id, usuario);
+            return ResponseEntity.ok(actualizado);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
     
     @GetMapping
