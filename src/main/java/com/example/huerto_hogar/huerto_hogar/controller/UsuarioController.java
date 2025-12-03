@@ -9,7 +9,6 @@ import org.springframework.web.bind.annotation.*;
 import java.util.HashMap;
 import java.util.Map;
 
-
 @RestController
 @RequestMapping("/api/v1/usuarios")
 @CrossOrigin(origins = "*")
@@ -17,10 +16,10 @@ public class UsuarioController {
 
     @Autowired private UsuarioService service;
 
-
     @Autowired
     private com.example.huerto_hogar.huerto_hogar.security.JwtUtil jwtUtil; 
 
+    //Login (Genera el Token JWT)
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody Map<String, String> credenciales) {
         String correo = credenciales.get("correo");
@@ -33,7 +32,7 @@ public class UsuarioController {
             // Aqui generamos el token JWT
             String token = jwtUtil.generateToken(usuario.getCorreo(), usuario.getRol().getNombre());
             
-            //Preparamos la respuesta (Usuario + Token)
+            // Preparamos la respuesta (Usuario + Token)
             Map<String, Object> respuesta = new HashMap<>();
             respuesta.put("usuario", usuario);
             respuesta.put("token", token);
@@ -44,38 +43,26 @@ public class UsuarioController {
         }
     }
 
+
     @PostMapping
-    public ResponseEntity<?> registrar(@RequestBody Map<String, Object> body) {
+    public ResponseEntity<?> registrar(@RequestBody Usuario usuario) {
         try {
-            System.out.println("Datos recibidos en Java: " + body);
-            String nombreRolRecibido = (String) body.get("rol");
-            System.out.println("Rol extraído: " + nombreRolRecibido);
-
-            Usuario u = new Usuario();
-            u.setNombre((String) body.get("nombre"));
-            u.setApellido((String) body.get("apellido"));
-            u.setRut((String) body.get("rut"));
-            u.setCorreo((String) body.get("correo"));
-            u.setPassword((String) body.get("password"));
-            u.setDireccion((String) body.get("direccion"));
-            u.setTelefono((String) body.get("telefono"));
-            u.setRegion((String) body.get("region"));
-            u.setComuna((String) body.get("comuna"));
-
-            Usuario nuevoUsuario = service.guardar(u, nombreRolRecibido);
+            Usuario nuevoUsuario = service.guardar(usuario);
             return ResponseEntity.ok(nuevoUsuario);
+        } catch (RuntimeException e) {
 
-
+            return ResponseEntity.badRequest().body(e.getMessage());
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.internalServerError().body("Error al registrar: " + e.getMessage());
         }
-        
     }
+    
+
     @PutMapping("/{id}")
     public ResponseEntity<?> modificar(@PathVariable Long id, @RequestBody Usuario usuario) {
         try {
-            //actualizar usuario
+
             Usuario actualizado = service.actualizar(id, usuario);
             return ResponseEntity.ok(actualizado);
         } catch (RuntimeException e) {
@@ -83,6 +70,13 @@ public class UsuarioController {
         }
     }
     
+
     @GetMapping
     public java.util.List<Usuario> listar() { return service.listar(); }
+
+
+    @DeleteMapping("/{id}")
+    public void eliminar(@PathVariable Long id) {
+        service.eliminar(id);
+    }
 }

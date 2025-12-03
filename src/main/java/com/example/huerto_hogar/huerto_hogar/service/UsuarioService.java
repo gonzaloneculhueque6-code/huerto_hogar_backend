@@ -27,36 +27,31 @@ public class UsuarioService {
     }
 
     // Guardar nuevo usuario
-    public Usuario guardar(Usuario u, String nombreRol) {
-        // Se verifica si el correo existe si es un usuario nuevo (id null)
-        if (u.getId() == null && repo.existsByCorreo(u.getCorreo())) {
+   public Usuario guardar(Usuario u) {
+        // Verificar correo duplicado
+        if (repo.existsByCorreo(u.getCorreo())) {
             throw new RuntimeException("El correo ya está registrado");
         }
 
-        // Rol por defecto o solicitado
-        String r = "CLIENTE"; 
-        if (nombreRol != null) {
-            if (nombreRol.equalsIgnoreCase("admin")) {
-                r = "ADMIN";
-            } else if (nombreRol.equalsIgnoreCase("vendedor")) {
-                r = "VENDEDOR"; 
-            }
+        // Lógica para obtener el nombre del rol desde el objeto u
+        String nombreRol = "CLIENTE"; // Por defecto
+        
+        // Si el frontend envió un rol (ej: { nombre: "VENDEDOR" })
+        if (u.getRol() != null && u.getRol().getNombre() != null) {
+            nombreRol = u.getRol().getNombre();
         }
 
-        // Aqui se buca el objeto Rol en la BD
-        String finalRolName = r;
-        Rol rol = rolRepo.findAll().stream()
+        String finalRolName = nombreRol;
+        Rol rolReal = rolRepo.findAll().stream()
                 .filter(x -> x.getNombre().equalsIgnoreCase(finalRolName))
                 .findFirst()
                 .orElseThrow(() -> new RuntimeException("Error: El rol " + finalRolName + " no existe en la BD."));
         
-        u.setRol(rol);
+        u.setRol(rolReal);
         return repo.save(u);
     }
 
-    // Actualizar usuario
     public Usuario actualizar(Long id, Usuario usuarioActualizado) {
-        // Buscamos al usuario original
         Usuario usuarioExistente = repo.findById(id)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
@@ -95,10 +90,9 @@ public class UsuarioService {
         return repo.save(usuarioExistente);
     }
 
-    //Listar todos los usuarios
+
     public List<Usuario> listar() { return repo.findAll(); }
 
-    // Eliminar usuario
     public void eliminar(Long id) {
         repo.deleteById(id);
     }
